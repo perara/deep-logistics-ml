@@ -3,6 +3,7 @@ import sys
 import state_representations
 
 sys.path.append("/home/per/IdeaProjects/deep_logistics")
+sys.path.append("/workspace/deep-logistics-ml/deep-logistics")
 
 from environment import Environment
 from agent import Agent
@@ -87,6 +88,8 @@ class Env:
     def render(self):
         self.env.render()
         return self.state_representation.generate()
+
+
 
 
 if __name__ == "__main__":
