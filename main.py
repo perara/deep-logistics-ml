@@ -5,6 +5,7 @@ import glob
 from threading import Thread
 
 sys.path.append("/home/per/IdeaProjects/deep-logistics/deep-logistics")
+sys.path.append("/home/per/GIT/code/deep-logistics/deep-logistics")
 sys.path.append("/root/deep-logistics")
 
 import multiprocessing
@@ -16,7 +17,7 @@ from agent_factory import AgentFactory
 from environment import Environment
 from agents import AIAgent
 from agent import Agent
-
+import matplotlib.pyplot as plt
 
 class Env:
 
@@ -46,6 +47,8 @@ class Env:
         self.last_time = time.time()
         self.pickup_count = 0
         self.delivery_count = 0
+        self.stat_deliveries = []
+        self.episode = 0
 
         #env.daemon = True
         #env.start()
@@ -88,14 +91,27 @@ class Env:
         return state, reward, terminal, {}
 
     def reset(self):
-        print("Environment was reset, took: %s seconds. Pickups: %s, Deliveries: %s" % (time.time() - self.last_time, self.pickup_count, self.delivery_count))
+        print("[%s] Environment was reset, took: %s seconds. Pickups: %s, Deliveries: %s" % (self.episode, time.time() - self.last_time, self.pickup_count, self.delivery_count))
         self.last_time = time.time()
+        self.stat_deliveries.append(self.delivery_count)
+        if self.episode % 50 == 0:
+            self.graph()
+
         self.pickup_count = 0
         self.delivery_count = 0
+        self.episode += 1
 
     def render(self):
         self.env.render()
         return self.state_representation.generate()
+
+    def graph(self):
+        plt.plot([x for x in range(len(self.stat_deliveries))], self.stat_deliveries, color='blue')
+        plt.xlabel('Episode')
+        plt.ylabel('Number of Successive Deliveries')
+        plt.title('Deep Logistics - PPO - Experiment A')
+        plt.savefig("./ppo-experiment.png")
+
 
 
 class TrainWorker(multiprocessing.Process):

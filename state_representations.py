@@ -107,7 +107,6 @@ class State0(BaseState):
 
         """
           7. Add speed
-
         """
         state_features.append(player.action_intensity)
 
