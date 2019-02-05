@@ -2,8 +2,8 @@ import sys
 
 import state_representations
 
-sys.path.append("/home/per/IdeaProjects/deep_logistics")
-sys.path.append("/workspace/deep-logistics-ml/deep-logistics")
+sys.path.append("/home/per/IdeaProjects/deep-logistics/deep-logistics")
+sys.path.append("/workspace/deep-logistics")
 
 from environment import Environment
 from agent import Agent
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             dict(type='dense', size=64)
         ],
         step_optimizer=dict(type='adam', learning_rate=1e-4),
-        summarizer=dict(directory="/home/per/IdeaProjects/deep_logistics_ml/board",
+        summarizer=dict(directory="/home/per/IdeaProjects/deep-logistics_ml/board",
                         labels=[    "bernoulli", "beta", "categorical", "distributions", "dropout", "entropy", "gaussian", "graph",
                                     "loss", "losses", "objective-loss", "regularization-loss", "relu", "updates", "variables", "actions", "states", "rewards"]
                         ),

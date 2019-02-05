@@ -1,3 +1,3 @@
-tf-nightly
+
 git+git://github.com/tensorforce/tensorforce.git
-tb-nightly
+numpy
