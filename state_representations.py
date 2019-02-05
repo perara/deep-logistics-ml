@@ -105,6 +105,16 @@ class State0(BaseState):
         """
         state_features.append(player.state / len(player.ALL_STATES))
 
+        """
+          7. Add speed
+
+        """
+        state_features.append(player.action_intensity)
+
+
+
+
+
         return np.array(state_features)
 
 

@@ -1,20 +1,21 @@
+import os
 import sys
-
-import state_representations
+import time
+import glob
+from threading import Thread
 
 sys.path.append("/home/per/IdeaProjects/deep-logistics/deep-logistics")
-sys.path.append("/workspace/deep-logistics")
+sys.path.append("/root/deep-logistics")
 
+import multiprocessing
+
+
+import argparse
+import state_representations
+from agent_factory import AgentFactory
 from environment import Environment
+from agents import AIAgent
 from agent import Agent
-from tensorforce.agents import PPOAgent
-import numpy as np
-
-
-class AIAgent(Agent):
-
-    def __init__(self, env):
-        super().__init__(env)
 
 
 class Env:
@@ -42,12 +43,14 @@ class Env:
         # Assumes that all agnets have spawned already and that all tasks are assigned.
         self.env.deploy_agents()
         self.env.task_assignment()
+        self.last_time = time.time()
+        self.pickup_count = 0
+        self.delivery_count = 0
 
         #env.daemon = True
         #env.start()
 
         self.player = self.env.agent
-        print(self.player)
 
     def step(self, action):
         state = self.player.state
@@ -66,13 +69,15 @@ class Env:
             reward = -0.01
             terminal = False
         elif self.player.state in [Agent.PICKUP]:
+            self.pickup_count += 1
             reward = 1
             terminal = False
-            print("Pickup", state, self.player.task.c_1)
+            #print("Pickup", state, self.player.task.c_1)
         elif self.player.state in [Agent.DELIVERY]:
+            self.delivery_count += 1
             reward = 10
-            terminal = True
-            print("Delivery", state)
+            terminal = False
+            #print("Delivery", state)
         elif self.player.state in [Agent.DESTROYED]:
             reward = -1
             terminal = True
@@ -83,47 +88,95 @@ class Env:
         return state, reward, terminal, {}
 
     def reset(self):
-        pass  # TODO Implement
+        print("Environment was reset, took: %s seconds. Pickups: %s, Deliveries: %s" % (time.time() - self.last_time, self.pickup_count, self.delivery_count))
+        self.last_time = time.time()
+        self.pickup_count = 0
+        self.delivery_count = 0
 
     def render(self):
         self.env.render()
         return self.state_representation.generate()
 
 
+class TrainWorker(multiprocessing.Process):
 
+    def __init__(self, process_id, agent_type):
+        super().__init__()
+        self.agent_type = agent_type
+        self.process_id = process_id
+        self.import_buffer = None
+        self.t = None
+        self.agent = None
+
+    def experience_import_loop(self):
+        while True:
+            experience_files = glob.glob('/data/*.npy', recursive=True)
+            time.sleep(.1)
+
+    def run(self):
+        self.import_buffer = []
+        self.t = Thread(target=self.experience_import_loop)
+        self.t.start()
+
+        env = Env(state_representation=state_representations.State0)
+        
+        self.agent = AgentFactory.create(self.agent_type, env)
+
+        while True:
+            # Retrieve the latest (observable) environment state
+            state = env.render()  # (float array of shape [10])
+
+            # Query the agent for its action decision
+            action = self.agent.act(states=state)  # (scalar between 0 and 4)
+
+            # Execute the decision and retrieve the current performance score
+            state_1, reward, terminal, _ = env.step(action)  # (any scalar float)
+
+            if terminal:
+                env.reset()
+
+            # Pass feedback about performance (and termination) to the agent
+            self.agent.observe(reward=reward, terminal=terminal)
+
+
+class ExplorationWorker(multiprocessing.Process):
+
+    def __init__(self, process_id, agent_type):
+        super().__init__()
+        self.process_id = process_id
+        self.agent_type = agent_type
+        self.agent = None
+        self.experiences = None
+
+    def run(self):
+        self.experiences = []
+        env = Env(state_representation=state_representations.State0)
+
+        self.agent = AgentFactory.create(self.agent_type, env)
+
+        while True:
+            # Retrieve the latest (observable) environment state
+            state = env.render()  # (float array of shape [10])
+
+            # Query the agent for its action decision
+            action = self.agent.act(states=state)  # (scalar between 0 and 4)
+
+            # Execute the decision and retrieve the current performance score
+            state_1, reward, terminal, _ = env.step(action)  # (any scalar float)
+
+            self.experiences.append(state, action, reward, )
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train_only", help="Only train the AI single process...", default=False, action="store_true")
+    parser.add_argument("--train", help="Train the AI", default=False, action="store_true")
+    parser.add_argument("--ppo", help="Train the AI", default=False, action="store_true")
+    parser.add_argument("--random", help="Random Agent, default=False", action="store_true")
+    parser.add_argument("--manhattan", help="Manhattan Agent", default=False, action="store_true")
+    args = parser.parse_args()
 
-    env = Env(state_representation=state_representations.State0)
-
-    # Instantiate a Tensorforce agent
-    """
-
-    """
-    agent = PPOAgent(
-        states=dict(type='float', shape=env.state_representation.get_shape()),
-        actions=dict(type='int', num_actions=env.env.action_space.N_ACTIONS),
-        network=[
-            dict(type='dense', size=64),
-            dict(type='dense', size=64),
-            dict(type='dense', size=64)
-        ],
-        step_optimizer=dict(type='adam', learning_rate=1e-4),
-        summarizer=dict(directory="/home/per/IdeaProjects/deep-logistics_ml/board",
-                        labels=[    "bernoulli", "beta", "categorical", "distributions", "dropout", "entropy", "gaussian", "graph",
-                                    "loss", "losses", "objective-loss", "regularization-loss", "relu", "updates", "variables", "actions", "states", "rewards"]
-                        ),
-    )
-
-    while True:
-        # Retrieve the latest (observable) environment state
-        state = env.render()  # (float array of shape [10])
-
-        # Query the agent for its action decision
-        action = agent.act(states=state)  # (scalar between 0 and 4)
-
-        # Execute the decision and retrieve the current performance score
-        state_1, reward, terminal, _ = env.step(action)  # (any scalar float)
-
-        # Pass feedback about performance (and termination) to the agent
-        agent.observe(reward=reward, terminal=terminal)
+    if args.train_only:
+        print("Start!")
+        x = TrainWorker(1, "ppo")
+        x.start()
+        x.join()

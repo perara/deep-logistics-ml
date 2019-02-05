@@ -18,7 +18,8 @@ RUN pip3 install -r deep-logistics-ml-git/requirements.txt
 
 RUN chmod +x /root/deep-logistics-ml-git/runner.sh
 
-CMD ["/root/deep-logistics-ml-git/runner.sh"]
+CMD ["/root/deep-logistics-ml/runner.sh"]
+
 
 
 
