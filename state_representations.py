@@ -10,7 +10,7 @@ class BaseState:
         raise NotImplementedError("state.*generate()* must be implemented.")
 
     def get_shape(self):
-        return self.generate().shape
+        return self.generate(self.env.agent).shape
 
     def norm_cord_x(self, x):
         return x / self.env.grid.width
@@ -109,17 +109,20 @@ class State0(BaseState):
         """
         state_features.append(player.action_intensity)
 
-        """
-         8. Add proximity sensor (LEFT RIGHT, UP DOWN)
-        """
-        state_features.extend(player.get_proximity_sensors())
-
         return np.array(state_features)
 
 
-class State1(BaseState):
+class State1(State0):
     """Generate state representation of the environment."""
-    pass
+
+    """
+       8. Add proximity sensor (LEFT RIGHT, UP DOWN)
+      """
+    def generate(self, player):
+        state_features = np.array(player.get_proximity_sensors())
+
+        return np.concatenate((super().generate(player), state_features))
+
 
 
 class State2(BaseState):

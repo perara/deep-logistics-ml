@@ -1,5 +1,5 @@
 import random
-from agent import Agent
+from deep_logistics.agent import Agent
 
 class RandomAgent:
 

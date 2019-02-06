@@ -1,8 +1,5 @@
 from tensorforce.agents import PPOAgent
 
-from agents import RandomAgent
-
-
 class AgentFactory:
 
     @staticmethod
@@ -12,9 +9,6 @@ class AgentFactory:
         except Exception as e:
             raise NotImplementedError("The agent type %s does not exist!" % t)
 
-    @staticmethod
-    def random(env):
-        return RandomAgent(env)
 
     @staticmethod
     def ppo(env):
