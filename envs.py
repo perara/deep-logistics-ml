@@ -1,3 +1,5 @@
+from collections import deque
+
 from deep_logistics.environment import Environment
 from deep_logistics.agent import Agent, ManhattanAgent
 from ray.rllib import MultiAgentEnv
@@ -6,18 +8,12 @@ from ray.tune import register_env
 from state_representations import State0
 from gym.spaces import Tuple, Discrete
 
+
 class Statistics:
 
     def __init__(self):
-        self.episode_start = 0
-        self.episode_end = 0
-        self.episode_durations = []
-
-        self.episode_pickup_count = 0
-        self.episode_delivery_count = 0
-        self.episode_cumulative_reward = 0
-        self.rewards = []
-
+        self.deliveries_before_crash = deque(maxlen=1000)
+        self.pickups_before_crash = deque(maxlen=1000)
 
 class DeepLogisticBase(MultiAgentEnv):
 
@@ -48,7 +44,7 @@ class DeepLogisticBase(MultiAgentEnv):
             self.env.add_agent(Agent)
 
         self.state_representation = state(self.env)
-        self.observation_space = self.state_representation.generate()
+        self.observation_space = self.state_representation.generate(self.env.agents[0])
         self.action_space = Discrete(self.env.action_space.N_ACTIONS)
 
         self.grouping = {'group_1': ["agent_%s" % x for x in range(ai_count)]}
@@ -82,6 +78,8 @@ class DeepLogisticBase(MultiAgentEnv):
             reward = 10
             terminal = False
         elif player.state in [Agent.DESTROYED]:
+            self.statistics.pickups_before_crash.append(player.total_pickups)
+            self.statistics.deliveries_before_crash.append(player.total_deliveries)
             reward = -1
             terminal = True
         elif player.state in [Agent.INACTIVE]:
@@ -93,10 +91,12 @@ class DeepLogisticBase(MultiAgentEnv):
         return reward, terminal
 
     def step(self, action_dict):
-        info = {}
-        reward = {}
-        terminal = {}
-        state = {}
+        info_dict = {}
+        reward_dict = {}
+        terminal_dict = {
+            "__all__": True
+        }
+        state_dict = {}
 
         for agent_name, action in action_dict.items():
             self.agents[agent_name].do_action(action=action)
@@ -105,17 +105,22 @@ class DeepLogisticBase(MultiAgentEnv):
         self.env.update()
 
         """Evaluate score"""
-        for agent_name, action in action_dict.items():
+        for agent_name, agent in self.agents.items():
             reward, terminal = self.player_evaluate(self.agents[agent_name])
 
-        # TOPPED HERE. MUST ADD REWARD, TERMINAL STATE INFO TO DICT
+            reward_dict[agent_name] = reward
+            terminal_dict[agent_name] = terminal
+
+            info_dict[agent_name] = {}
+            state_dict[agent_name] = self.state_representation.generate(agent)
 
         self.render()
-        return self.state_representation.generate(), reward, terminal, info
+
+        return state_dict, reward_dict, terminal_dict, info_dict
 
     def reset(self):
         return {
-            k: self.state_representation.generate(i) for i, k in enumerate(self.grouping["group_1"])
+            agent_name: self.state_representation.generate(agent) for agent_name, agent in self.agents.items()
         }
 
     def render(self, mode='human', close=False):
@@ -129,7 +134,7 @@ class DeepLogisticsA10M20x20D4(DeepLogisticBase):
         DeepLogisticBase.__init__(self,
                                   height=20,
                                   width=20,
-                                  ai_count=10,
+                                  ai_count=2,
                                   agent_count=15,
                                   agent=ManhattanAgent,
                                   ups=None,

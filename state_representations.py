@@ -6,7 +6,7 @@ class BaseState:
     def __init__(self, env):
         self.env = env
 
-    def generate(self):
+    def generate(self, player):
         raise NotImplementedError("state.*generate()* must be implemented.")
 
     def get_shape(self):
@@ -22,9 +22,8 @@ class BaseState:
 class State0(BaseState):
     """Generate state representation of the environment."""
 
-    def generate(self, i=0):
+    def generate(self, player):
         state_features = []
-        player = self.env.agents[i]
 
         """
         1. State looks like:
@@ -110,12 +109,12 @@ class State0(BaseState):
         """
         state_features.append(player.action_intensity)
 
-
-
-
+        """
+         8. Add proximity sensor (LEFT RIGHT, UP DOWN)
+        """
+        state_features.extend(player.get_proximity_sensors())
 
         return np.array(state_features)
-
 
 
 class State1(BaseState):
