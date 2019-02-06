@@ -7,7 +7,7 @@ import argparse
 import ray
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import pretty_print
-from envs import DeepLogisticsA1M20x20D4
+from envs import DeepLogisticsA10M20x20D4
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     config = ppo.DEFAULT_CONFIG.copy()
     config["num_gpus"] = 0
     config["num_workers"] = 1
-    agent = ppo.PPOAgent(config=config, env=DeepLogisticsA1M20x20D4)
+    agent = ppo.PPOAgent(config=config, env=DeepLogisticsA10M20x20D4)
     for i in range(1000):
         # Perform one iteration of training the policy with PPO
         result = agent.train()

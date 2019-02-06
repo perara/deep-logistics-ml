@@ -22,9 +22,9 @@ class BaseState:
 class State0(BaseState):
     """Generate state representation of the environment."""
 
-    def generate(self):
+    def generate(self, i=0):
         state_features = []
-        player = self.env.agents[0]
+        player = self.env.agents[i]
 
         """
         1. State looks like:
