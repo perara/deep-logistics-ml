@@ -9,8 +9,9 @@ ppo = dict(
 
 
         # Size of batches collected from each worker
-        "sample_batch_size": 512,  # Number of experiences collected before sending to the Train worker
-        "train_batch_size": 1024,  # Number of batches collected before training   # TODO
+        "sample_batch_size": 128,  # Number of experiences collected before sending to the Train worker
+        #"train_batch_size": 128,  # Number of batches collected before training   # TODO
+        "sgd_minibatch_size": 128,
         'batch_mode': 'truncate_episodes',  # alternatively. complete_episodes', Truncate sends training batches before episode ends. the other ones does not...
 
 
@@ -20,7 +21,7 @@ ppo = dict(
         # Number of SGD iterations in each outer loop
         "num_sgd_iter": 25,
         # Total SGD batch size across all devices for SGD
-        #"sgd_minibatch_size": 128,
+
 
         "model": {
             "fcnet_activation": "tanh",
