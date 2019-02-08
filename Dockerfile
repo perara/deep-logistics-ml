@@ -9,16 +9,16 @@ RUN python3 -m pip install --upgrade pip
 WORKDIR /root/
 
 # Clone Code
-RUN git clone https://github.com/perara/deep-logistics-ml.git deep-logistics-ml-git
-RUN git clone https://github.com/perara/deep-logistics.git deep-logistics-git
+RUN git clone https://github.com/perara/deep_logistics_ml.git deep_logistics_ml_git
+RUN git clone https://github.com/perara/deep_logistics.git deep_logistics_git
 
 # Install dependencies
-RUN pip3 install -r deep-logistics-git/requirements.txt
-RUN pip3 install -r deep-logistics-ml-git/requirements.txt
+RUN pip3 install -r deep_logistics_git/requirements.txt
+RUN pip3 install -r deep_logistics_ml_git/requirements.txt
 
-RUN chmod +x /root/deep-logistics-ml-git/runner.sh
+RUN chmod +x /root/deep_logistics_ml_git/runner.sh
 
-CMD ["/root/deep-logistics-ml/runner.sh"]
+CMD ["/root/deep_logistics_ml/runner.sh"]
 
 
 

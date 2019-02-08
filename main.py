@@ -24,7 +24,7 @@ def dict_merge(dct, merge_dct):
 
 sys.path.append("/home/per/IdeaProjects/deep-logistics")
 sys.path.append("/home/per/GIT/code/deep-logistics")
-sys.path.append("/root/deep-logistics")
+sys.path.append("/root/deep_logistics")
 
 import argparse
 import ray

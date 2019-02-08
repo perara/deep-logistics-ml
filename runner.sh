@@ -9,17 +9,17 @@ DISPLAY=:1.0
 export DISPLAY
 
 # Upgrade repo
-#cd /root/deep-logistics && git pull
-#cd /root/deep-logistics-ml  && git pull
+#cd /root/deep_logistics && git pull
+#cd /root/deep_logistics-ml  && git pull
 
 # Update dependencies
-#python3 -m pip install -r /root/deep-logistics/requirements.txt
-#python3 -m pip install -r /root/deep-logistics-ml/requirements.txt
+#python3 -m pip install -r /root/deep_logistics/requirements.txt
+#python3 -m pip install -r /root/deep_logistics-ml/requirements.txt
 
 ls -la /
 
 # Run
-python3 /root/deep-logistics-ml/main.py --train_only > /root/logs/deep-logistics.log
+python3 /root/deep_logistics_ml/main.py --train_only > /root/logs/deep_logistics.log
 
 
 
