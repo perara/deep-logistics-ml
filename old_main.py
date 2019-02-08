@@ -4,6 +4,7 @@ import time
 import glob
 from threading import Thread
 
+sys.path.append("/home/per/GIT/deep-logistics")
 sys.path.append("/home/per/IdeaProjects/deep-logistics")
 sys.path.append("/home/per/GIT/code/deep-logistics")
 sys.path.append("/root/deep-logistics")
@@ -23,12 +24,12 @@ class Env:
 
     def __init__(self, state_representation, fps=60, ups=None):
         self.env = Environment(
-            height=12,
-            width=10,
+            height=20,
+            width=20,
             depth=3,
             agents=1,
             agent_class=AIAgent,
-            renderer=None,
+            draw_screen=False,
             tile_height=32,
             tile_width=32,
             #scheduler=RandomScheduler,
@@ -36,7 +37,13 @@ class Env:
             ticks_per_second=1,
             spawn_interval=1,  # In seconds
             task_generate_interval=1,  # In seconds
-            task_assign_interval=1  # In seconds
+            task_assign_interval=1,  # In seconds
+            delivery_points=[
+                                (4, 4),
+                                (4, 14),
+                                (14, 4),
+                                (14, 14)
+                            ]
         )
 
         self.state_representation = state_representation(self.env)
@@ -102,7 +109,7 @@ class Env:
         self.episode += 1
 
     def render(self):
-        self.env.render()
+        #self.env.render()
         return self.state_representation.generate(self.env.agent)
 
     def graph(self):

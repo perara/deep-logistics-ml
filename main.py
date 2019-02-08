@@ -1,15 +1,40 @@
 import sys
+
+from ray import tune
+
+import alg_config
+import collections
+
+
+def dict_merge(dct, merge_dct):
+    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    updating only top-level keys, dict_merge recurses down into dicts nested
+    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
+    ``dct``.
+    :param dct: dict onto which the merge is executed
+    :param merge_dct: dct merged into dct
+    :return: None
+    """
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict)
+                and isinstance(merge_dct[k], collections.Mapping)):
+            dict_merge(dct[k], merge_dct[k])
+        else:
+            dct[k] = merge_dct[k]
+
 sys.path.append("/home/per/IdeaProjects/deep-logistics")
 sys.path.append("/home/per/GIT/code/deep-logistics")
 sys.path.append("/root/deep-logistics")
 
 import argparse
 import ray
-import ray.rllib.agents.ppo as ppo
+from ray.rllib.agents import ppo, a3c, impala
+
 from ray.tune.logger import pretty_print
 from envs import DeepLogisticsA10M20x20D4
 import numpy as np
 if __name__ == "__main__":
+    ray.init()
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_only", help="Only train the AI single process...", default=False, action="store_true")
     parser.add_argument("--train", help="Train the AI", default=False, action="store_true")
@@ -19,35 +44,24 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     def on_episode_end(info):
-        env = info['env']
         episode = info["episode"]
+        env = info["env"].envs[0]
 
-        pickups = []
-        deliveries = []
-        for e in env.envs:
+        episode.custom_metrics["deliveries"] = np.mean(env.statistics.deliveries_before_crash)
+        episode.custom_metrics["pickups"] = np.mean(env.statistics.pickups_before_crash)
 
-            pickups.extend(e.statistics.pickups_before_crash)
-            deliveries.extend(e.statistics.deliveries_before_crash)
-
-        episode.custom_metrics["average_pickups"] = np.mean(pickups)
-        episode.custom_metrics["average_deliveries"] = np.mean(deliveries)
-
-    ray.init()
     config = ppo.DEFAULT_CONFIG.copy()
-    config["num_gpus"] = 1
-    config["num_workers"] = 6
-    config["callbacks"] = {
-        'on_episode_end': on_episode_end
-    }
-    config["train_batch_size"] = 100000
-    print(config)
-    agent = ppo.PPOAgent(config=config, env=DeepLogisticsA10M20x20D4)
-    for i in range(1000):
-        print("== Iteration", i, "==")
-        result = agent.train()
-        print(result)
+    dict_merge(config, alg_config.ppo["v1"])
+    config["callbacks"]["on_episode_end"] = tune.function(on_episode_end)
 
-        if i % 100 == 0:
-            checkpoint = agent.save()
-            print("checkpoint saved at", checkpoint)
+    # "lr": tune.grid_search([0.01, 0.001, 0.0001]),
+    tune.run_experiments({
+        "experiment-1-ppo": {
+            "run": "PPO",
+            "env": DeepLogisticsA10M20x20D4,
+            "stop": {"episode_reward_mean": 500},
+            "config": config
+        },
+    })
+
 

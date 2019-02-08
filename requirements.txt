@@ -3,3 +3,9 @@ matplotlib
 ray[rllib]  # also recommended: ray[debug]
 ray[debug]
 gym
+git+https://github.com/tensorforce/tensorforce.git
+tensorflow-gpu
+
+jupyter
+ipywidgets
+bokeh
