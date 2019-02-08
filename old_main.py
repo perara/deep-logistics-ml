@@ -186,8 +186,6 @@ class ExplorationWorker(multiprocessing.Process):
             # Execute the decision and retrieve the current performance score
             state_1, reward, terminal, _ = env.step(action)  # (any scalar float)
 
-            self.experiences.append(state, action, reward, )
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_only", help="Only train the AI single process...", default=False, action="store_true")
@@ -197,7 +195,5 @@ if __name__ == "__main__":
     parser.add_argument("--manhattan", help="Manhattan Agent", default=False, action="store_true")
     args = parser.parse_args()
 
-
     x = TrainWorker(1, "ppo")
-    x.start()
-    x.join()
+    x.run()
