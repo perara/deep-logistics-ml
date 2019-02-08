@@ -16,11 +16,6 @@ export DISPLAY
 #python3 -m pip install -r /root/deep_logistics/requirements.txt
 #python3 -m pip install -r /root/deep_logistics-ml/requirements.txt
 
-ls -la /
-
-# Run
-python3 /root/deep_logistics_ml/main.py --train_only > /root/logs/deep_logistics.log
-
-
-
+python3 -m tensorboard.main --logdir=~/ray_results/ &
+python3 /root/deep_logistics_ml/main.py --dgx > /root/deep_logistics.log
 

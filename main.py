@@ -1,9 +1,12 @@
 import sys
-
+sys.path.append("/home/per/IdeaProjects/deep_logistics")
+sys.path.append("/home/per/GIT/code/deep_logistics")
+sys.path.append("/root")
 from ray import tune
 
 import alg_config
 import collections
+import os
 
 
 def dict_merge(dct, merge_dct):
@@ -22,9 +25,7 @@ def dict_merge(dct, merge_dct):
         else:
             dct[k] = merge_dct[k]
 
-sys.path.append("/home/per/IdeaProjects/deep-logistics")
-sys.path.append("/home/per/GIT/code/deep-logistics")
-sys.path.append("/root/deep_logistics")
+
 
 import argparse
 import ray
@@ -36,11 +37,7 @@ import numpy as np
 if __name__ == "__main__":
     ray.init()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_only", help="Only train the AI single process...", default=False, action="store_true")
-    parser.add_argument("--train", help="Train the AI", default=False, action="store_true")
-    parser.add_argument("--ppo", help="Train the AI", default=False, action="store_true")
-    parser.add_argument("--random", help="Random Agent, default=False", action="store_true")
-    parser.add_argument("--manhattan", help="Manhattan Agent", default=False, action="store_true")
+    parser.add_argument("--dgx", help="Use DGX cpu and gpu", default=False, action="store_true")
     args = parser.parse_args()
 
     def on_episode_end(info):
@@ -53,6 +50,10 @@ if __name__ == "__main__":
     config = ppo.DEFAULT_CONFIG.copy()
     dict_merge(config, alg_config.ppo["v1"])
     config["callbacks"]["on_episode_end"] = tune.function(on_episode_end)
+
+    if args.dgx:
+        config["num_workers"] = os.cpu_count() - 4
+        config["num_gpus"] = 16
 
     # "lr": tune.grid_search([0.01, 0.001, 0.0001]),
     tune.run_experiments({
