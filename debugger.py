@@ -34,13 +34,15 @@ if __name__ == "__main__":
     env.deploy_agents()
     env.task_assignment()
     state = State0(env)
+    agent = env.agents[0]
 
     def on_event():
-        y = state.generate(env.agent)
+        env.update()
+        y = state.generate(agent)
         print(" - ".join([str(x) for x in y]))
 
-    env.agent.add_event_callback(on_event)
+    agent.add_event_callback(on_event)
 
     while True:
-            env.update()
-            env.render()
+        agent.automate()
+        env.render()

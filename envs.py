@@ -1,9 +1,10 @@
-from collections import deque
 import sys
 sys.path.append("/home/per/GIT/deep-logistics")
 sys.path.append("/home/per/IdeaProjects/deep-logistics")
 sys.path.append("/home/per/GIT/code/deep-logistics")
 sys.path.append("/root/deep-logistics")
+
+from agents import AIAgent
 import os
 from deep_logistics.environment import Environment
 from deep_logistics.agent import Agent, ManhattanAgent
@@ -28,7 +29,7 @@ class DeepLogisticBase(MultiAgentEnv):
             height=height,
             width=width,
             depth=3,
-            agents=0,
+            agents=ai_count,
             agent_class=agent,
             draw_screen=self.render_screen,
             tile_height=32,
@@ -46,9 +47,6 @@ class DeepLogisticBase(MultiAgentEnv):
 
         assert ai_count < agent_count
 
-        for i in range(ai_count):
-            self.env.add_agent(Agent)
-
         self.state_representation = state(self.env)
         self.observation_space = self.state_representation.generate(self.env.agents[0])
         self.action_space = Discrete(self.env.action_space.N_ACTIONS)
@@ -58,11 +56,11 @@ class DeepLogisticBase(MultiAgentEnv):
         obs_space = Tuple([self.observation_space for _ in range(ai_count)])
         act_space = Tuple([self.action_space for _ in range(ai_count)])
 
-        self.with_agent_groups(
+        """self.with_agent_groups(
             groups=self.grouping,
             obs_space=obs_space,
             act_space=act_space
-        )
+        )"""
 
         """Spawn all agents etc.."""
         self.env.deploy_agents()
@@ -78,7 +76,7 @@ class DeepLogisticBase(MultiAgentEnv):
             reward = -0.01
             terminal = False
         elif player.state in [Agent.PICKUP]:
-            reward = 1
+            reward = 1  # Set back? TODO
             terminal = False
         elif player.state in [Agent.DELIVERY]:
             reward = 10
@@ -130,6 +128,8 @@ class DeepLogisticBase(MultiAgentEnv):
         return state_dict, reward_dict, terminal_dict, info_dict
 
     def reset(self):
+        self.env.reset()
+
         return {
             agent_name: self.state_representation.generate(agent) for agent_name, agent in self.agents.items()
         }
@@ -149,7 +149,7 @@ class DeepLogisticsA10M20x20D4(DeepLogisticBase):
                                   ai_count=1,
                                   agent_count=15,
                                   render_screen=False,
-                                  agent=ManhattanAgent,
+                                  agent=AIAgent,
                                   ups=None,
                                   delivery_points=[
                                       (7, 2),

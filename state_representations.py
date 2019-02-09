@@ -10,7 +10,7 @@ class BaseState:
         raise NotImplementedError("state.*generate()* must be implemented.")
 
     def get_shape(self):
-        return self.generate(self.env.agent).shape
+        return self.generate(self.env.agents[0]).shape
 
     def norm_cord_x(self, x):
         return x / self.env.grid.width

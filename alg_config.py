@@ -11,7 +11,7 @@ ppo = dict(
         # Initial coefficient for KL divergence
         "kl_coeff": 0.2,
         # Size of batches collected from each worker
-        "sample_batch_size": 200,
+        "sample_batch_size": 2000,
         # Number of timesteps collected for each SGD round
         "train_batch_size": 30000,
         # Total SGD batch size across all devices for SGD
@@ -40,7 +40,7 @@ ppo = dict(
         # Whether to rollout "complete_episodes" or "truncate_episodes"
         "batch_mode": "truncate_episodes",
         # Which observation filter to apply to the observation
-        "observation_filter": "MeanStdFilter",  # TODO NoFilter ?
+        "observation_filter": "NoFilter", # "MeanStdFilter",  # TODO NoFilter ?
         # Uses the sync samples optimizer instead of the multi-gpu one. This does
         # not support minibatches.
         "simple_optimizer": False,
@@ -53,8 +53,8 @@ ppo = dict(
             "fcnet_hiddens": [128, 128, 128],
         },
         # Workers
-        'num_workers': 5,
-        'num_envs_per_worker': 1,
+        'num_workers': 7,
+        'num_envs_per_worker': 4,
         'num_gpus': 1
 
     }

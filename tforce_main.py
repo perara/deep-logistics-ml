@@ -10,8 +10,6 @@ sys.path.append("/home/per/GIT/code/deep-logistics")
 sys.path.append("/root/deep-logistics")
 
 import multiprocessing
-
-
 import argparse
 import state_representations
 from agent_factory import AgentFactory
@@ -19,6 +17,7 @@ from deep_logistics.environment import Environment
 from agents import AIAgent
 from deep_logistics.agent import Agent
 import matplotlib.pyplot as plt
+
 
 class Env:
 
@@ -29,10 +28,10 @@ class Env:
             depth=3,
             agents=1,
             agent_class=AIAgent,
-            draw_screen=False,
+            draw_screen=True,
             tile_height=32,
             tile_width=32,
-            #scheduler=RandomScheduler,
+            # scheduler=RandomScheduler,
             ups=ups,
             ticks_per_second=1,
             spawn_interval=1,  # In seconds
@@ -57,23 +56,23 @@ class Env:
         self.stat_deliveries = []
         self.episode = 0
 
-        #env.daemon = True
-        #env.start()
+        # env.daemon = True
+        # env.start()
 
-        self.player = self.env.agent
+        self.player = self.env.agents[0]
 
     def step(self, action):
         state = self.player.state
         self.player.do_action(action=action)
         self.env.update()
         new_state = self.player.state
-        #print("%s => %s" % (state, new_state))
+        # print("%s => %s" % (state, new_state))
 
         """Fast-forward the game until the player is respawned."""
         while self.player.state == Agent.INACTIVE:
             self.env.update()
 
-        state = self.state_representation.generate(self.env.agent)
+        state = self.state_representation.generate(self.env.agents[0])
 
         if self.player.state in [Agent.IDLE, Agent.MOVING]:
             reward = -0.01
@@ -82,12 +81,12 @@ class Env:
             self.pickup_count += 1
             reward = 1
             terminal = False
-            #print("Pickup", state, self.player.task.c_1)
+            # print("Pickup", state, self.player.task.c_1)
         elif self.player.state in [Agent.DELIVERY]:
             self.delivery_count += 1
             reward = 10
             terminal = False
-            #print("Delivery", state)
+            # print("Delivery", state)
         elif self.player.state in [Agent.DESTROYED]:
             reward = -1
             terminal = True
@@ -98,7 +97,8 @@ class Env:
         return state, reward, terminal, {}
 
     def reset(self):
-        print("[%s] Environment was reset, took: %s seconds. Pickups: %s, Deliveries: %s" % (self.episode, time.time() - self.last_time, self.pickup_count, self.delivery_count))
+        print("[%s] Environment was reset, took: %s seconds. Pickups: %s, Deliveries: %s" % (
+        self.episode, time.time() - self.last_time, self.pickup_count, self.delivery_count))
         self.last_time = time.time()
         self.stat_deliveries.append(self.delivery_count)
         if self.episode % 50 == 0:
@@ -107,10 +107,11 @@ class Env:
         self.pickup_count = 0
         self.delivery_count = 0
         self.episode += 1
+        self.env.reset()
 
     def render(self):
-        #self.env.render()
-        return self.state_representation.generate(self.env.agent)
+        self.env.render()
+        return self.state_representation.generate(self.env.agents[0])
 
     def graph(self):
         plt.plot([x for x in range(len(self.stat_deliveries))], self.stat_deliveries, color='blue')
@@ -118,7 +119,6 @@ class Env:
         plt.ylabel('Number of Successive Deliveries')
         plt.title('Deep Logistics - PPO - Experiment A')
         plt.savefig("./ppo-experiment.png")
-
 
 
 class TrainWorker(multiprocessing.Process):
@@ -155,6 +155,7 @@ class TrainWorker(multiprocessing.Process):
             state_1, reward, terminal, _ = env.step(action)  # (any scalar float)
 
             if terminal:
+
                 env.reset()
 
             # Pass feedback about performance (and termination) to the agent
@@ -185,6 +186,7 @@ class ExplorationWorker(multiprocessing.Process):
 
             # Execute the decision and retrieve the current performance score
             state_1, reward, terminal, _ = env.step(action)  # (any scalar float)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
