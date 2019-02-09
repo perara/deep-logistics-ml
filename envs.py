@@ -4,7 +4,7 @@ sys.path.append("/home/per/GIT/deep-logistics")
 sys.path.append("/home/per/IdeaProjects/deep-logistics")
 sys.path.append("/home/per/GIT/code/deep-logistics")
 sys.path.append("/root/deep-logistics")
-
+import os
 from deep_logistics.environment import Environment
 from deep_logistics.agent import Agent, ManhattanAgent
 from ray.rllib import MultiAgentEnv
@@ -16,13 +16,14 @@ from gym.spaces import Tuple, Discrete
 class Statistics:
 
     def __init__(self):
-        self.deliveries_before_crash = deque(maxlen=100)
-        self.pickups_before_crash = deque(maxlen=100)
+        self.deliveries_before_crash = 1
+        self.pickups_before_crash = 1
 
 class DeepLogisticBase(MultiAgentEnv):
 
     def __init__(self, height, width, ai_count, agent_count, agent, ups, delivery_points, state, render_screen=False):
         self.render_screen = render_screen
+        os.environ["MKL_NUM_THREADS"] = "1"
         self.env = Environment(
             height=height,
             width=width,
@@ -63,14 +64,9 @@ class DeepLogisticBase(MultiAgentEnv):
             act_space=act_space
         )
 
-        print(dir(self))
-
-
-
         """Spawn all agents etc.."""
         self.env.deploy_agents()
         self.env.task_assignment()
-
 
         self.episode = 0
 
@@ -79,24 +75,21 @@ class DeepLogisticBase(MultiAgentEnv):
 
     def player_evaluate(self, player):
         if player.state in [Agent.IDLE, Agent.MOVING]:
-            reward = -0.001
+            reward = -0.01
             terminal = False
         elif player.state in [Agent.PICKUP]:
-            reward = 0.2
+            reward = 1
             terminal = False
         elif player.state in [Agent.DELIVERY]:
-            reward = 0.8
+            reward = 10
             terminal = False
         elif player.state in [Agent.DESTROYED]:
-            self.statistics.pickups_before_crash.append(player.total_pickups)
-            self.statistics.deliveries_before_crash.append(player.total_deliveries)
-            #print("Episode: %s | Pickups: %s, Deliveries: %s" % (self.episode, player.total_pickups, player.total_deliveries))
             self.episode += 1
             reward = -1
             terminal = True
         elif player.state in [Agent.INACTIVE]:
-            terminal = True
             reward = 0
+            terminal = False
         else:
             raise NotImplementedError("Should never happen. all states should be handled somehow")
 
@@ -118,20 +111,19 @@ class DeepLogisticBase(MultiAgentEnv):
 
         """Evaluate score"""
         t__all__ = True
-        for agent_name, agent in self.agents.items():
+        for agent_name, agent in action_dict.items():
             reward, terminal = self.player_evaluate(self.agents[agent_name])
 
             reward_dict[agent_name] = reward
             terminal_dict[agent_name] = terminal
+
             if not terminal:
                 t__all__ = terminal
 
-            info_dict[agent_name] = {}
-            state_dict[agent_name] = self.state_representation.generate(agent)
+            state_dict[agent_name] = self.state_representation.generate(self.agents[agent_name])
 
         """Update terminal dict"""
         terminal_dict["__all__"] = t__all__
-
         if self.render_screen:
             self.render()
 
@@ -156,12 +148,13 @@ class DeepLogisticsA10M20x20D4(DeepLogisticBase):
                                   width=10,
                                   ai_count=1,
                                   agent_count=15,
+                                  render_screen=False,
                                   agent=ManhattanAgent,
                                   ups=None,
                                   delivery_points=[
-                                      (3, 7),
-                                      (3, 7),
-                                      (7, 3),
+                                      (7, 2),
+                                      (2, 2),
+                                      (2, 7),
                                       (7, 7)
                                   ],
                                   state=State0)

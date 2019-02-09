@@ -36,7 +36,7 @@ class AgentFactory:
             ),
             gae_lambda=0.97, likelihood_ratio_clipping=0.2,
             # PPO optimizer
-            step_optimizer=dict(type='adam', learning_rate=3e-4),
+            step_optimizer=dict(type='adam', learning_rate=3e-5), # was -4
             # PPO multi-step optimization: 25 updates, each calculated for 20% of the batch
             subsampling_fraction=0.2, optimization_steps=25
         )

@@ -24,8 +24,8 @@ class Env:
 
     def __init__(self, state_representation, fps=60, ups=None):
         self.env = Environment(
-            height=20,
-            width=20,
+            height=10,
+            width=10,
             depth=3,
             agents=1,
             agent_class=AIAgent,
@@ -39,11 +39,11 @@ class Env:
             task_generate_interval=1,  # In seconds
             task_assign_interval=1,  # In seconds
             delivery_points=[
-                                (4, 4),
-                                (4, 14),
-                                (14, 4),
-                                (14, 14)
-                            ]
+                (7, 2),
+                (2, 2),
+                (2, 7),
+                (7, 7)
+            ]
         )
 
         self.state_representation = state_representation(self.env)

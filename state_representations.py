@@ -18,6 +18,9 @@ class BaseState:
     def norm_cord_y(self, y):
         return y / self.env.grid.height
 
+    def normalize(self, v, min, max):
+        return (v - min) / (max - min)
+
 
 class State0(BaseState):
     """Generate state representation of the environment."""
@@ -30,8 +33,18 @@ class State0(BaseState):
         []
         """
         if player.cell:
-            state_features.append(self.norm_cord_x(player.cell.x) + 0.0001)
-            state_features.append(self.norm_cord_y(player.cell.y) + 0.0001)
+
+            state_features.append(self.normalize(
+                v=player.cell.x,
+                min=0,
+                max=player.environment.grid.width,
+            ))
+            state_features.append(self.normalize(
+                v=player.cell.y,
+                min=0,
+                max=player.environment.grid.height,
+            ))
+
         else:
             state_features.append(0)
             state_features.append(0)
@@ -45,12 +58,27 @@ class State0(BaseState):
             state_features.append(0)
             state_features.append(0)
         elif not player.task.has_picked_up:
-            state_features.append(self.norm_cord_y(player.task.x_0))
-            state_features.append(self.norm_cord_y(player.task.y_0))
+            state_features.append(self.normalize(
+                v=player.task.x_0,
+                min=0,
+                max=player.environment.grid.width
+            ))
+            state_features.append(self.normalize(
+                v=player.task.y_0,
+                min=0,
+                max=player.environment.grid.height
+            ))
         else:
-            state_features.append(self.norm_cord_x(player.task.x_1))
-            state_features.append(self.norm_cord_y(player.task.y_1))
-
+            state_features.append(self.normalize(
+                v=player.task.x_1,
+                min=0,
+                max=player.environment.grid.width
+            ))
+            state_features.append(self.normalize(
+                v=player.task.y_1,
+                min=0,
+                max=player.environment.grid.height
+            ))
         """
         3. State looks like:
         [x, y, target_x, target_y]
@@ -67,14 +95,14 @@ class State0(BaseState):
             d_y = 0 if d_y == 0 else d_y / abs(d_y)  # Normalize
 
             if d_x == -1:
-                d_x = 0
+                d_x = -0.1
             elif d_x == 0:
-                d_x = 0.5
+                d_x = 0.1
 
             if d_y == -1:
-                d_y = 0
+                d_y = -0.1
             elif d_y == 0:
-                d_y = 0.5
+                d_y = 0.1
 
             state_features.append(d_x)
             state_features.append(d_y)
@@ -87,10 +115,26 @@ class State0(BaseState):
         if not player.cell:
             state_features.extend([-1, -1, -1, -1])
         else:
-            d_l = self.norm_cord_x(player.cell.x)
-            d_r = self.norm_cord_x(player.environment.grid.width - player.cell.x)
-            d_u = self.norm_cord_y(player.cell.y)
-            d_d = self.norm_cord_y(player.environment.grid.height - player.cell.y)
+            d_l = self.normalize(
+                v=player.cell.x,
+                min=0,
+                max=player.environment.grid.width
+            )
+            d_r = self.normalize(
+                v=player.environment.grid.width - player.cell.x,
+                min=0,
+                max=player.environment.grid.width
+            )
+            d_u = self.normalize(
+                v=player.cell.y,
+                min=0,
+                max=player.environment.grid.height
+            )
+            d_d = self.normalize(
+                v=player.environment.grid.height - player.cell.y,
+                min=0,
+                max=player.environment.grid.height
+            )
             state_features.extend([d_l, d_r, d_u, d_d])
 
         """
@@ -102,7 +146,11 @@ class State0(BaseState):
         y. State looks like: ^ 
         [x, y, target_x, target_y, direction_hint_x, direction_hint_y, distance_border_left, distance_border_right, distance_border_up, distance_border_down, state]
         """
-        state_features.append(player.state / len(player.ALL_STATES))
+        state_features.append(self.normalize(
+            v=player.state,
+            min=player.IDLE,
+            max=player.INACTIVE
+        ))
 
         """
           7. Add speed
