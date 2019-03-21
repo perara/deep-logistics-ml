@@ -1,0 +1,7 @@
+ray[rllib]
+
+tensorflow-gpu
+tensorflow
+numpy
+pygame
+SharedArray

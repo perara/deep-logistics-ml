@@ -1,9 +1,9 @@
+import ray
 from ray.rllib import MultiAgentEnv
 import os
 
 from ray.rllib.agents import ppo
-from ray.tune import register_env
-
+from ray.tune import register_env, grid_search, run_experiments
 from deep_logistics import DeepLogistics
 from deep_logistics import SpawnStrategies
 from gym.spaces import Tuple, Discrete
@@ -90,7 +90,37 @@ class DeepLogisticsMultiEnv(MultiAgentEnv):
 
 
 if __name__ == "__main__":
+    ray.init()
 
-    register_env("DeepLogisticsMultiEnv", lambda config: DeepLogisticsMultiEnv(**config))
+    class DeepLogisticsMultiEnv1(DeepLogisticsMultiEnv):
 
-    trainer = ppo.PPOAgent(env="DeepLogisticsMultiEnv")
+        def __init__(self):
+            DeepLogisticsMultiEnv.__init__(self, **dict(
+                state=State0,
+                reward=Reward0,
+                width=30,
+                height=30,
+                depth=3,
+                taxi_n=1,
+                group_type="individual",
+                graphics_render=False
+            ))
+
+    register_env("DeepLogisticsMultiEnv1", lambda config: DeepLogisticsMultiEnv1())
+
+    trainer = ppo.PPOAgent(env="DeepLogisticsMultiEnv1")
+    while True:
+        trainer.train()
+    """run_experiments({
+        "demo": {
+            "run": "PPO",
+            "env": "DeepLogisticsMultiEnv1",  # or "corridor" if registered above
+            "stop": {
+                "timesteps_total": 10000,
+            },
+            "config": {
+                "lr": grid_search([1e-2, 1e-4, 1e-6]),  # try different lrs
+                "num_workers": 1,  # parallelism
+            },
+        },
+    })"""
