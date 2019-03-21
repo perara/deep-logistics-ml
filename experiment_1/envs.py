@@ -71,73 +71,7 @@ class DeepLogisticBase(MultiAgentEnv):
     def get_agents(self):
         return self.env.agents
 
-    def player_evaluate(self, player):
-        if player.state in [Agent.IDLE, Agent.MOVING]:
-            reward = -0.01
-            terminal = False
-        elif player.state in [Agent.PICKUP]:
-            reward = 1  # Set back? TODO
-            terminal = False
-        elif player.state in [Agent.DELIVERY]:
-            reward = 10
-            terminal = False
-        elif player.state in [Agent.DESTROYED]:
-            self.episode += 1
-            reward = -1
-            terminal = True
-        elif player.state in [Agent.INACTIVE]:
-            reward = 0
-            terminal = False
-        else:
-            raise NotImplementedError("Should never happen. all states should be handled somehow")
 
-        return reward, terminal
-
-    def step(self, action_dict):
-        info_dict = {}
-        reward_dict = {}
-        terminal_dict = {
-            "__all__": False
-        }
-        state_dict = {}
-
-        for agent_name, action in action_dict.items():
-            self.agents[agent_name].do_action(action=action)
-
-        """Update the environment"""
-        self.env.update()
-
-        """Evaluate score"""
-        t__all__ = True
-        for agent_name, agent in action_dict.items():
-            reward, terminal = self.player_evaluate(self.agents[agent_name])
-
-            reward_dict[agent_name] = reward
-            terminal_dict[agent_name] = terminal
-
-            if not terminal:
-                t__all__ = terminal
-
-            state_dict[agent_name] = self.state_representation.generate(self.agents[agent_name])
-
-        """Update terminal dict"""
-        terminal_dict["__all__"] = t__all__
-        if self.render_screen:
-            self.render()
-
-        return state_dict, reward_dict, terminal_dict, info_dict
-
-    def reset(self):
-        self.env.reset()
-
-        return {
-            agent_name: self.state_representation.generate(agent) for agent_name, agent in self.agents.items()
-        }
-
-    def render(self, mode='human', close=False):
-        if self.render_screen:
-            self.env.render()
-        return self.env
 
 
 class DeepLogisticsA10M20x20D4(DeepLogisticBase):
