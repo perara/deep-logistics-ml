@@ -92,6 +92,8 @@ class DeepLogisticsMultiEnv(MultiAgentEnv):
     def step(self, action_dict):
         self.total_steps += 1
 
+        # TODO this loop does not make sense when using multiple policies. Now we do 1 action for all taxis with a single policy (i think) instead of 1 action per policy
+
         info_dict = {}
         reward_dict = {}
         terminal_dict = {"__all__": False}
