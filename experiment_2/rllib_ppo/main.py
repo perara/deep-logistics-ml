@@ -162,10 +162,10 @@ if __name__ == "__main__":
             DeepLogisticsMultiEnv.__init__(self, **dict(
                 state=State0,
                 reward=Reward0,
-                width=10,
-                height=10,
+                width=5,
+                height=5,
                 depth=3,
-                taxi_n=5,
+                taxi_n=2,
                 group_type="individual",
                 graphics_render=False,
                 delivery_locations=[
@@ -200,5 +200,6 @@ if __name__ == "__main__":
                                #num_workers=2
                            ))
     while True:
+        print(":D")
         print(trainer.train())
 1
