@@ -1,70 +1,44 @@
-import subprocess
-import sys
-from builtins import ImportError
-import os
+from gym.spaces import Box, Discrete, Tuple
+from ray.rllib import MultiAgentEnv
+from ray.tune import register_env
 
 from deep_logistics.agent import Agent
+from deep_logistics.environment import Environment
+from deep_logistics import spawn_strategy
+import os
+import numpy as np
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = "5,6,7,8,9,10,11,12"
-
-
-def install(package):
-    subprocess.call([sys.executable, "-m", "pip", "install", "--user", package])
-
-
-try:
-    import gym
-    import ray
-    from gym import Space
-    from ray.rllib import MultiAgentEnv
-    import os
-    import numpy as np
-    from ray import tune
-    from ray.rllib.agents import ppo
-    from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
-    from ray.tune import register_env, grid_search, run_experiments
-    from deep_logistics import DeepLogistics
-    from deep_logistics import SpawnStrategies
-    from gym.spaces import Tuple, Discrete, Box
-
-    from deep_logistics_ml.experiment_2.rllib_ppo.reward_functions import Reward0
-    from deep_logistics_ml.experiment_2.rllib_ppo.state_representations import State0
-except ImportError as e:
-    print(e)
-    install("gym")
-    install("lz4")
-    install("SharedArray")
-    install("pygame")
-    install("ray[rllib]")
-    install("setproctitle")
-    install("opencv-python")
-    install("numpy")
-    install("tensorflow-gpu")
-    install("tensorflow")
-    install("psutil")
-    exit(0)
+from deep_logistics_ml.experiment_3.reward_functions import Reward0
+from deep_logistics_ml.experiment_3.state_representations import State0
 
 
-class DeepLogisticsMultiEnv(MultiAgentEnv):
+class BaseDeepLogisticsMultiEnv(MultiAgentEnv):
 
-    def __init__(self, state, reward, width, height, depth, taxi_n, group_type="individual", graphics_render=False, delivery_locations=None):
+    def __init__(self, state, reward, width, height, depth, taxi_n, group_type="individual", graphics_render=False,
+                 delivery_locations=None):
         os.environ["MKL_NUM_THREADS"] = "1"
-        self.env = DeepLogistics(width=width,
-                                 height=height,
-                                 depth=depth,
-                                 taxi_n=taxi_n,
-                                 taxi_agent=Agent,
-                                 ups=None,
-                                 graphics_render=graphics_render,
-                                 delivery_locations=delivery_locations,
-                                 spawn_strategy=SpawnStrategies.RandomSpawnStrategy
-                                 )
+
+        self.env = Environment(width=width,
+                               height=height,
+                               depth=depth,
+                               taxi_n=taxi_n,
+                               taxi_agent=Agent,
+                               ups=None,
+                               graphics_render=graphics_render,
+                               delivery_locations=delivery_locations,
+                               spawn_strategy=spawn_strategy.RandomSpawnStrategy
+                               )
+
         self.state_representation = state(self.env)
         self.reward_function = reward
         self._render = graphics_render
 
-        self.observation_space = Box(low=-1, high=1, shape=self.state_representation.generate(self.env.agents[0]).shape, dtype=np.float32)
+        self.observation_space = Box(
+            low=-1,
+            high=1,
+            shape=self.state_representation.generate(self.env.agents[0]).shape,
+            dtype=np.float32
+        )
         self.action_space = Discrete(self.env.action_space.N_ACTIONS)
 
         self.agents = {"agent_%s" % i: self.env.agents[i] for i in range(taxi_n)}
@@ -84,15 +58,16 @@ class DeepLogisticsMultiEnv(MultiAgentEnv):
             raise NotImplementedError("The group type %s is not implemented." % group_type)
 
         self.with_agent_groups(
-                groups=self.grouping,
-                obs_space=Tuple([self.observation_space for _ in range(taxi_n)]),
-                act_space=Tuple([self.action_space for _ in range(taxi_n)])
-            )
+            groups=self.grouping,
+            obs_space=Tuple([self.observation_space for _ in range(taxi_n)]),
+            act_space=Tuple([self.action_space for _ in range(taxi_n)])
+        )
 
     def step(self, action_dict):
         self.total_steps += 1
 
-        # TODO this loop does not make sense when using multiple policies. Now we do 1 action for all taxis with a single policy (i think) instead of 1 action per policy
+        # TODO this loop does not make sense when using multiple policies.
+        #  Now we do 1 action for all taxis with a single policy (i think) instead of 1 action per policy
         # Cluster: https://ray.readthedocs.io/en/latest/install-on-docker.html#launch-ray-in-docker<
         info_dict = {}
         reward_dict = {}
@@ -128,7 +103,6 @@ class DeepLogisticsMultiEnv(MultiAgentEnv):
 
     def reset(self):
         self.env.reset()
-
         self.total_steps = 0
 
         return {
@@ -153,31 +127,38 @@ class DeepLogisticsMultiEnv(MultiAgentEnv):
         episode.custom_metrics["pickups"] = pickups
 
 
+class DeepLogisticsMultiEnv1(BaseDeepLogisticsMultiEnv):
+
+    def __init__(self, config=dict()):
+        c = dict(
+            state=State0,
+            reward=Reward0,
+            width=10,
+            height=10,
+            depth=3,
+            taxi_n=2,
+            group_type="individual",
+            graphics_render=False,
+            delivery_locations=[
+                (2, 2), (2, 7),
+                (7, 2), (7, 7)
+            ]
+
+        )
+        c.update(config)
+        BaseDeepLogisticsMultiEnv.__init__(self, **c)
+
+
+register_env("DeepLogisticsMultiEnv1", lambda config: DeepLogisticsMultiEnv1())
+
+"""
 if __name__ == "__main__":
-    ray.init(num_gpus=len(os.environ["CUDA_VISIBLE_DEVICES"].split(",")), num_cpus=os.cpu_count()-1)
 
-    class DeepLogisticsMultiEnv1(DeepLogisticsMultiEnv):
 
-        def __init__(self):
-            DeepLogisticsMultiEnv.__init__(self, **dict(
-                state=State0,
-                reward=Reward0,
-                width=5,
-                height=5,
-                depth=3,
-                taxi_n=2,
-                group_type="individual",
-                graphics_render=False,
-                delivery_locations=[
-                    (2, 2), (2, 7),
-                    (7, 2), (7, 7)
-                ]
-
-            ))
 
     env = DeepLogisticsMultiEnv1()
 
-    register_env("DeepLogisticsMultiEnv1", lambda config: DeepLogisticsMultiEnv1())
+    
 
     policy_graphs = {
         k: (PPOPolicyGraph, env.observation_space, env.action_space, dict(
@@ -195,11 +176,12 @@ if __name__ == "__main__":
                                callbacks=dict(
                                    on_episode_end=tune.function(DeepLogisticsMultiEnv.on_episode_end)
                                )
-                               
-                               #num_envs_per_worker=4,
-                               #num_workers=2
+
+                               # num_envs_per_worker=4,
+                               # num_workers=2
                            ))
     while True:
         print(":D")
         print(trainer.train())
 1
+"""

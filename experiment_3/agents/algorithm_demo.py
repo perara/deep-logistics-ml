@@ -1,17 +1,11 @@
-import gym
+
 import logging
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.python.keras import layers, losses, optimizers
-from tensorflow.python.client import device_lib
-#print(device_lib.list_local_devices())
-from deep_logistics import DeepLogistics
-from deep_logistics import SpawnStrategies
-from deep_logistics.agent import Agent, ManhattanAgent
-from deep_logistics_ml.experiment_3.algorithm_1.env import DLTestEnv
-from deep_logistics_ml.experiment_3.algorithm_1.reward_functions import Reward0
-from deep_logistics_ml.experiment_3.algorithm_1.state_representations import State0
+from ray.rllib.agents import Agent
+
 
 
 class ProbabilityDistribution(tf.keras.Model):
@@ -48,7 +42,7 @@ class Model(tf.keras.Model):
         return np.squeeze(action, axis=-1), np.squeeze(value, axis=-1)
 
 
-class A2CAgent:
+class A2CAgent(Agent):
     def __init__(self, model):
         # hyperparameters for loss terms, gamma is the discount coefficient
         self.params = {

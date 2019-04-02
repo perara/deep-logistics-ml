@@ -17,8 +17,7 @@ def Reward0(player):
         terminal = True
     elif player.state in [Agent.INACTIVE]:
         reward = 0
-        terminal = False
+        terminal = True
     else:
         raise NotImplementedError("Should never happen. all states should be handled somehow")
-
     return reward, terminal
