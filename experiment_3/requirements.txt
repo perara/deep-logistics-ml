@@ -1,5 +1,9 @@
-tensorflow-gpu==2.0.0-alpha0
+tensorflow
 gym
 numpy>=1.16.2
 pygame>=1.9.5
 matplotlib
+ray[rllib]
+ray[debug]
+psutil
+setproctitle

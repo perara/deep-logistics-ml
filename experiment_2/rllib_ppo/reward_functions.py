@@ -20,5 +20,4 @@ def Reward0(player):
         terminal = False
     else:
         raise NotImplementedError("Should never happen. all states should be handled somehow")
-
     return reward, terminal
