@@ -3,11 +3,17 @@ import argparse
 import os
 import subprocess
 import sys
+from absl import flags, app
+from tqdm import tqdm
+
+flags.DEFINE_bool("dgx", False, "Run the experiment on DGX infrastructure.")
+flags.DEFINE_bool("install", False, "Install dependencies automatically and exit")
+flags.DEFINE_integer("train_epochs", 10, "Number of epochs to the train before demonstration.")
+FLAGS = flags.FLAGS
 
 from ray import tune
 from ray.rllib.agents import ppo
 from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
-
 from deep_logistics_ml.experiment_3.env import DeepLogisticsMultiEnv1
 
 
@@ -19,7 +25,7 @@ def install_dependencies():
 
 def experiment_1():
     env = DeepLogisticsMultiEnv1(config=dict(
-        graphics_render=True
+        graphics_render=False
     ))
 
     """Create distinct policy graphs for each agent."""
@@ -41,14 +47,15 @@ def experiment_1():
                                 ),
                                 callbacks=dict(
                                     on_episode_end=tune.function(DeepLogisticsMultiEnv1.on_episode_end)
-                                )
+                                ),
 
-                                # num_envs_per_worker=4,
-                                # num_workers=2
+                                num_envs_per_worker=4,
+                                num_workers=96
                             ))
 
     while True:
-        trainer.train()
+        for _ in tqdm(range(FLAGS.train_epochs)):
+            print(trainer.train())
 
         env.reset()
         terminal = False
@@ -76,9 +83,7 @@ def experiment_1():
             terminal = terminal_dict["__all__"]
 
 
-
-if __name__ == "__main__":
-
+def main(argv):
     """Argument parser"""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dgx", type=bool, default=False, help="Run the experiment on DGX infrastructure.")
@@ -93,6 +98,10 @@ if __name__ == "__main__":
         install_dependencies()
         exit(0)
 
-    ray.init()
+    ray.init(num_cpus=96, num_gpus=16) # redis_address="localhost:6379"
 
     experiment_1()
+
+
+if __name__ == "__main__":
+    app.run(main)

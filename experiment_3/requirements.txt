@@ -3,7 +3,8 @@ gym
 numpy>=1.16.2
 pygame>=1.9.5
 matplotlib
-ray[rllib]
-ray[debug]
+git+https://github.com/ray-project/ray.git#egg=ray&subdirectory=python
 psutil
 setproctitle
+
+tqdm
