@@ -1,12 +1,14 @@
 from deep_logistics import DeepLogistics
 from deep_logistics import SpawnStrategies
 from deep_logistics.agent import Agent, ManhattanAgent
+
+
 if __name__ == "__main__":
 
     env = DeepLogistics(width=30,
                         height=30,
                         depth=3,
-                        taxi_n=0,
+                        taxi_n=1,
                         ups=5000,
                         graphics_render=True,
                         delivery_locations=[

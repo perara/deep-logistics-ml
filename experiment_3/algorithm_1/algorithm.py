@@ -1,18 +1,18 @@
-import gym
+import os
+import sys
+sys.path.append("/home/per/GIT/code/deep_logistics/")
+os.environ["DISPLAY"] = ":0"
+
+
 import logging
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.python.keras import layers, losses, optimizers
-from tensorflow.python.client import device_lib
-#print(device_lib.list_local_devices())
-from deep_logistics import DeepLogistics
-from deep_logistics import SpawnStrategies
-from deep_logistics.agent import Agent, ManhattanAgent
+
 from deep_logistics_ml.experiment_3.algorithm_1.env import DLTestEnv
 from deep_logistics_ml.experiment_3.algorithm_1.reward_functions import Reward0
 from deep_logistics_ml.experiment_3.algorithm_1.state_representations import State0
-
 
 class ProbabilityDistribution(tf.keras.Model):
     def call(self, logits):
