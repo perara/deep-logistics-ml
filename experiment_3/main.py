@@ -1,3 +1,5 @@
+import logging
+
 import ray
 import argparse
 import os
@@ -5,6 +7,7 @@ import subprocess
 import sys
 from absl import flags, app
 from tqdm import tqdm
+#os.environ["path"] += ":/root"
 
 flags.DEFINE_bool("dgx", False, "Run the experiment on DGX infrastructure.")
 flags.DEFINE_bool("install", False, "Install dependencies automatically and exit")
@@ -12,7 +15,7 @@ flags.DEFINE_integer("train_epochs", 10, "Number of epochs to the train before d
 FLAGS = flags.FLAGS
 
 from ray import tune
-from ray.rllib.agents import ppo
+from ray.rllib.agents import ppo, impala
 from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
 from deep_logistics_ml.experiment_3.env import DeepLogisticsMultiEnv1
 
@@ -37,7 +40,7 @@ def experiment_1():
 
     policy_ids = list(policy_graphs.keys())
 
-    trainer = ppo.APPOAgent(env="DeepLogisticsMultiEnv1",
+    trainer = impala.ImpalaAgent(env="DeepLogisticsMultiEnv1",
                             config=dict(
                                 multiagent=dict(
                                     policy_graphs=policy_graphs,
@@ -49,8 +52,8 @@ def experiment_1():
                                     on_episode_end=tune.function(DeepLogisticsMultiEnv1.on_episode_end)
                                 ),
 
-                                num_envs_per_worker=4,
-                                num_workers=96
+                                num_envs_per_worker=288,
+                                num_workers=288
                             ))
 
     while True:
@@ -90,18 +93,27 @@ def main(argv):
     parser.add_argument("--install", type=bool, default=False, help="Install dependencies automatically and exit")
     args = parser.parse_args()
 
-    if args.dgx:
-        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
-        os.environ["CUDA_VISIBLE_DEVICES"] = "5,6,7,8,9,10,11,12"
+    #if args.dgx:
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
+    os.environ["CUDA_VISIBLE_DEVICES"] = "5,6,7,8,9,10,11,12"
 
     if args.install:
         install_dependencies()
         exit(0)
 
-    ray.init(num_cpus=96, num_gpus=16) # redis_address="localhost:6379"
+    ray.init(redis_address="cair-gpu04.uia.no:6379", logging_level=logging.DEBUG)
 
     experiment_1()
 
 
+
 if __name__ == "__main__":
+    # TODO cheat and symlink everything in root folder to dist packages.. xD
+    for i in os.listdir("/root"):
+        try:
+            os.symlink("/root/%s" % i, "/usr/local/lib/python3.7/dist-packages/%s" % i)
+        except:
+            pass
+
+
     app.run(main)
